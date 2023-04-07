@@ -41,8 +41,6 @@
 using namespace ns3;
 using namespace std;
 
-vector < vector<uint64_t> > total_bytes (40,vector<uint64_t>(8));
-
 
 
 struct cdf_entry
@@ -223,13 +221,6 @@ double gen_random_cdf(struct cdf_table *table)
 
 NS_LOG_COMPONENT_DEFINE("fattreeSimp2p");
 
-double poission_gen_interval(double avg_rate)
-{
-    if(avg_rate > 0)
-       return -logf(1.0-(double)rand() / RAND_MAX) / avg_rate;
-    else
-       return 0;
-}
 
 template<typename T>
 T rand_range(T min, T max)
@@ -276,36 +267,14 @@ void print_stats ( FlowMonitor::FlowStats st)
 
 }
 
-void TxTrace(std::string context, Ptr<Packet const> packet )
-{
-    cout<<"TXTrace"<<endl;
-    std::cout<<context<<endl;
-    char* p = (char *)context.data();
-    char buf1[255];
-	char buf2[255];
-	char buf3[255];
-	char buf4[255];
-    char buf5[255];
-    sscanf(p, "/%[^/]/%[^/]/%[^/]/%[^/]/%s", buf1, buf2, buf3, buf4,buf5);
-    cout<<buf2<<" "<<buf4<<endl;
-    int dev = atoi(buf2);
-    int iface = atoi(buf4);
-    total_bytes[dev][iface]+=packet->GetSize();
-    
-}
 
-void SetupTxTrace(int dev_id, int ith_id)
-{
-    std::ostringstream oss;
-    cout<<"setuptxtrace"<<endl;
-    oss << "/NodeList/"<<dev_id<<"/DeviceList/"<<ith_id<<"/$ns3::PointToPointNetDevice/TxQueue/Dequeue";
-    Config::Connect (oss.str (), MakeCallback (&TxTrace));
-}
+
+
 
 //and then in the callback, capture number of bytes entering the link.
 
 
-
+/*
 void CalcStatictis()
 {
 //compute link utilisation
@@ -319,7 +288,7 @@ void CalcStatictis()
    
    Simulator::Schedule (Seconds (2), &CalcStatictis);
 }
-
+*/
 
 //NS_LOG_COMPONENT_DEFINE ("SimpleGlobalRoutingExample");
 
@@ -382,7 +351,7 @@ main(int argc, char *argv[])
   int k=4,i,j,temp,l1_index,p;
   uint32_t simSeed = 1;
   double simulationTime = 10;
-  double envStepTime = 0.05;
+  double envStepTime = 0.005;
   uint32_t openGymPort = 5555;
   uint32_t testArg = 0;
 
@@ -406,8 +375,7 @@ main(int argc, char *argv[])
 
   // OpenGym Env
   Ptr<OpenGymInterface> openGymInterface = CreateObject<OpenGymInterface> (openGymPort);
-  Ptr<MOGymEnv> myGymEnv;
-  myGymEnv = CreateObject<MOGymEnv> (Seconds(envStepTime));
+  Ptr<MOGymEnv> myGymEnv = CreateObject<MOGymEnv> (Seconds(envStepTime));
   myGymEnv->SetOpenGymInterface(openGymInterface);
 
   NS_LOG_INFO ("Create Nodes");
@@ -679,63 +647,9 @@ for( i = 0 ; i < groups ; i++)
 		 }   
     	}
     }
-}   
-
-
-  /*
-  std::pair<Ptr<Ipv4>, uint32_t> pair0 = ip_for_p2p[0].Get (0);
-  cout << "Router0 addresses 1 :" << pair0.first -> GetAddress(1,0) << endl; 
-  cout << "Router0 addresses 2 :" << pair0.first -> GetAddress(2,0) << endl; 
-  //cout << "Router0 addresses 3 :" << pair0.first -> GetAddress(3,0) << endl; 
-
-  std::pair<Ptr<Ipv4>, uint32_t> pair1 = ip_for_p2p[0].Get (1);
-  cout << "Router1 addresses 1 :" << pair1.first -> GetAddress(1,0) << endl; 
-  cout << "Router1 addresses 2 :" << pair1.first -> GetAddress(2,0) << endl; 
-  cout << "Router1 addresses 3 :" << pair1.first -> GetAddress(3,0) << endl; 
-
-  std::pair<Ptr<Ipv4>, uint32_t> pair2 = ip_for_p2p[1].Get (1);
-  cout << "Router2 addresses 1 :" << pair2.first -> GetAddress(1,0) << endl; 
-  cout << "Router2 addresses 2 :" << pair2.first -> GetAddress(2,0) << endl; 
-  cout << "Router2 addresses 3 :" << pair2.first -> GetAddress(3,0) << endl;
-
-  std::pair<Ptr<Ipv4>, uint32_t> pair3 = ip_for_p2p[1].Get (0);
-  cout << "Router3 addresses 1 :" << pair3.first -> GetAddress(1,0) << endl; 
-  //cout << "Router3 addresses 2 :" << pair3.first -> GetAddress(2,0) << endl; 
-  //cout << "Router3 addresses 3 :" << pair3.first -> GetAddress(3,0) << endl; 
-  //cout << "Router2 addresses 4 :" << pair2.first -> GetAddress(4,0) << endl; 
-  std::pair<Ptr<Ipv4>, uint32_t> pair4 = ip_for_core[3].Get (0);
-  cout << "Core addresses 1 :" << pair4.first -> GetAddress(1,0) << endl; 
-  std::pair<Ptr<Ipv4>, uint32_t> pair5 = ip_for_core[3].Get (1);
-  cout << "Core addresses 1 :" << pair5.first -> GetAddress(1,0) << endl; 
-  std::pair<Ptr<Ipv4>, uint32_t> pair6 = ip_for_core[3].Get (1);
-  cout << "Core addresses 1 :" << pair6.first -> GetAddress(1,0) << endl; 
-//  cout << "Core addresses 2 :" << pair3.first -> GetAddress(2,0) << endl; 
- // cout << "Core addresses 3 :" << pair3.first -> GetAddress(3,0) << endl; 
-  //cout << "Core addresses 4 :" << pair3.first -> GetAddress(4,0) << endl; 
-  //cout << "Core addresses 5 :" << pair3.first -> GetAddress(5,0) << endl; 
-  */
-
-  /* islinkup=false */ 
-
-  //Ptr<PointToPointNetDevice> p2p_d_0_0 = StaticCast<PointToPointNetDevice>(p2p_d[0].Get(0));
-  //Ptr<PointToPointNetDevice> p2p_d_0_1 = StaticCast<PointToPointNetDevice>(p2p_d[0].Get(1));
-  //p2p_d_0_0->SetIslinkUp(false);
-  //p2p_d_0_1->SetIslinkUp(false);
-
-  //Ptr<PointToPointNetDevice> p2p_d_2_0 = StaticCast<PointToPointNetDevice>(p2p_d[2].Get(0));
-  //Ptr<PointToPointNetDevice> p2p_d_2_1 = StaticCast<PointToPointNetDevice>(p2p_d[2].Get(1));
-  //p2p_d_2_0->SetIslinkUp(false);
-  //p2p_d_2_1->SetIslinkUp(false);
-
+}
    
    /********** link utilization ********************************/
-    for(int i=0;i<36;i++){
-         for(int j=0;j<8;j++){
-            total_bytes[i][j] = 0;
-         }
-    }
-
-  
   for(int m=0;m<4;m++){
    NetDeviceContainer agg_devs;
   for (NodeContainer::Iterator i = l1[m].Begin (); i != l1[m].End (); ++i)
@@ -746,14 +660,17 @@ for( i = 0 ; i < groups ; i++)
           agg_devs.Add (node->GetDevice (j));
         }
     }
-  
 
   // Setup trace on all devices
   for (NetDeviceContainer::Iterator i = agg_devs.Begin (); i != agg_devs.End (); ++i)
     {
       Ptr<NetDevice> dev = *i;
-      SetupTxTrace( dev->GetNode ()->GetId (), dev->GetIfIndex ());
-     }
+      std::ostringstream oss;
+        cout<<"setuptxtrace"<<endl;
+        oss << "/NodeList/"<<dev->GetNode ()->GetId ()<<"/DeviceList/"<<dev->GetIfIndex ()<<"/$ns3::PointToPointNetDevice/TxQueue/Dequeue";
+        Config::ConnectWithoutContext(oss.str(),MakeBoundCallback(&MOGymEnv::TxTrace,myGymEnv,dev->GetNode ()->GetId (),dev->GetIfIndex ()));
+ 
+    }
   }
   
    NetDeviceContainer core_devs;
@@ -768,10 +685,9 @@ for( i = 0 ; i < groups ; i++)
    for (NetDeviceContainer::Iterator i = core_devs.Begin (); i != core_devs.End (); ++i)
     {
       Ptr<NetDevice> dev = *i;
-      SetupTxTrace( dev->GetNode ()->GetId (), dev->GetIfIndex ());
+      MOGymEnv::SetupTxTrace( dev->GetNode ()->GetId (), dev->GetIfIndex ());
      }
-   
-    CalcStatictis();
+
     /*********************************************************/
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
    //Print total time taken
@@ -782,25 +698,6 @@ for( i = 0 ; i < groups ; i++)
   load_cdf(cdfTable, cdfFileName.c_str());
 
   Ipv4GlobalRoutingHelper::RecomputeRoutingTables ();
-
-  /*
-  cout << "Total time for setting up a route : " << (double) ( clock() - start) / CLOCKS_PER_SEC;
-  cout << "Aggregate routers, each pod second level, 3rd router" << endl;
-  printRoutingTable(l1[0].Get(2));
-  printRoutingTable(l1[1].Get(2));
-  printRoutingTable(l1[2].Get(2));
-  printRoutingTable(l1[3].Get(2));
-  cout << "Aggregate routers, each pod first level, 3rd router" << endl;
-  printRoutingTable(l1[0].Get(0));
-  printRoutingTable(l1[1].Get(0));
-  printRoutingTable(l1[2].Get(0));
-  printRoutingTable(l1[3].Get(0));
-  cout << "Core routers routing table " << endl;
-  printRoutingTable(l2.Get(0));
-  printRoutingTable(l2.Get(1));
-  printRoutingTable(l2.Get(2));
-  printRoutingTable(l2.Get(3));
- */
    
    /* one-to-many */
    /*
@@ -879,14 +776,14 @@ for( i = 0 ; i < groups ; i++)
                    //source.SetAttribute ("SimpleTOS", UintegerValue (tos));
 
                    sourceApps.Add(source.Install (c[temp + l].Get (l)));
-                   sourceApps.Start (Seconds (0.5));
+                   sourceApps.Start (Seconds (0.0));
    		   sourceApps.Stop (Seconds (2.0));
     
 
                    sink.SetAttribute ("Local",AddressValue(InetSocketAddress(Ipv4Address::GetAny (), port)));
                    sinkApps.Add(sink.Install (c[temp1+l].Get (l)));
                    
-                   sinkApps.Start (Seconds (0.5));
+                   sinkApps.Start (Seconds (0.0));
    		   sinkApps.Stop (Seconds (2.0));
 
                   
@@ -895,11 +792,6 @@ for( i = 0 ; i < groups ; i++)
            }
         }
    }
-
-   
-
-   
-  
 
   
   // Code for flowmonitor
@@ -924,30 +816,11 @@ for( i = 0 ; i < groups ; i++)
      NS_LOG_INFO ("Run Simulation.");
      Simulator::Stop (Seconds (END_TIME));
 
-    //Ipv4GlobalRoutingHelper g;
-   //Ptr<OutputStreamWrapper> routingStream = Create<OutputStreamWrapper> ("dynamic-global-routing.routes", std::ios::out);
-   //g.PrintRoutingTableAllAt (Seconds (5.0), routingStream);
-
 
      AnimationInterface anim(animFile);
      anim.SetMaxPktsPerTraceFile(99999999999999);
 	
      Simulator::Run ();
-
-    
-     
-     if(enableMonitor){
-        printf("Entering the monitor\n");
-        bzero(str1,30);
-        bzero(str2,30);
-        bzero(str3,30);
-        strcpy(str1,"fat-tree");
-        snprintf(str2,10,"%d",10);
-        strcat(str2,".flowmon");
-        strcat(str1,str2);
-        flowmon->SerializeToXmlFile(str1, true, true);
-
-     }
 
      
      bool Plot=true;
@@ -973,7 +846,8 @@ for( i = 0 ; i < groups ; i++)
                  gnuplot.AddDataset(dataset);
                  gnuplot.GenerateOutput(std::cout);
      }
-     
+
+     myGymEnv->NotifySimulationEnd();
      Simulator::Destroy ();
      free_cdf(cdfTable);
      cout<< "sinkapps"<<sinkApps.GetN()<<endl;
@@ -986,7 +860,6 @@ for( i = 0 ; i < groups ; i++)
      anim.StopAnimation ();
 
      NS_LOG_INFO ("Done.");
-  //
 
 }
 

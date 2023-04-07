@@ -18,6 +18,9 @@ public:
   virtual void DoDispose ();
 
   void SetReward(double value1, double value2);
+  void SetupTxTrace(int dev_id, int ith_id);
+  void TxTrace(std::string context, Ptr<Packet const> packet);
+
 
   //std::string GetTcpCongStateName(const TcpSocketState::TcpCongState_t state);
   //std::string GetTcpCAEventName(const TcpSocketState::TcpCAEvent_t event);
@@ -47,7 +50,8 @@ public:
 
 protected:
   uint32_t m_obs_link_num;
-  uint32_t m_obj_num; // 2
+  uint32_t m_node_num;
+  uint32_t m_pod_num;
 
   // state
   // obs has to be implemented in child class
@@ -55,8 +59,6 @@ protected:
   // game over
   bool m_isGameOver;
 
-  // reward
-  float m_envReward;
 
   // extra info
   std::string m_info;
@@ -64,19 +66,24 @@ protected:
   // actions
   uint32_t m_new_index;
 
+
 private:
   // reward
   double m_reward[2];
-//  float m_penalty;
 
   void ScheduleNextStateRead();
 
   Time m_duration;
   Time m_timeStep;
+  Time m_interval = Seconds(0.005);
 
-  // state
-  Ptr<const TcpSocketState> m_tcb;
-  // (A,B) : node A device B
+  vector < vector<uint64_t> > m_total_bytes (40,vector<uint64_t>(8,0));
+  vector < vector<double> > m_start_time (40,vector<double>(8,0));
+  vector < vector<double> > m_end_time (40, vector<double>(8,0));
+  vector < vector<double> >m_link_utilization(40,0);
+  vector <pair<int,double>> m_fct;
+
+  // (A,B) : node A device(interface) B
   std::vector<pair<int,int>> m_link_interface_first = {(6,1),(6,2),(7,1),(7,2),(14,1)(14,2),(15,1),(15,2),
                                                        (22,1),(22,2),(23,1),(23,2),(30,1),(30,2),(31,1),(31,2),
                                                        (0,1),(0,2),(0,3),(0,4),(1,1),(1,2),(1,3),(1,4),

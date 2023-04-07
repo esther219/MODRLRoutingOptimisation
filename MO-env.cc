@@ -12,10 +12,25 @@ namespace ns3 {
 NS_LOG_COMPONENT_DEFINE ("ns3::MOGymEnv");
 NS_OBJECT_ENSURE_REGISTERED (MOGymEnv);
 
-MOGymEnv::MOGymEnv ()
+MOGymEnv::MOGymEnv (Time stepTime)
 {
   NS_LOG_FUNCTION (this);
+  m_obs_link_num = 32;
+  m_node_num = 36;
+  m_pod_num = 4;
+  m_interval = stepTime;
+  m_isGameOver = false;
+
+  Simulator::Schedule(stepTime,&MOGymEnv::ScheduleNextStateRead,this);
   SetOpenGymInterface(OpenGymInterface::Get());
+}
+
+void
+MOGymEnv::ScheduleNextStateRead()
+{
+  NS_LOG_FUNCTION (this);
+  Simulator::Schedule(m_interval,&MOGymEnv::ScheduleNextStateRead,this);
+  Notify();
 }
 
 MOGymEnv::~MOGymEnv ()
@@ -61,8 +76,7 @@ MOGymEnv::ExecuteActions(Ptr<OpenGymDataContainer> action)
     NS_LOG_FUNCTION(this);
     Ptr<OpenGymDiscreteContainer> discrete = DynamicCast<OpenGymDiscreteContainer>(action);
     uint32_t num = discrete->GetValue();
-    uint32_t oplink = num % m_obs_link_num;
-    if(num < m_obs_link_num){
+    if(0<num < m_obs_link_num){
         //num th link up
         Ptr <Node> n1 = NodeList::GetNode(m_link_interface_first[oplink].first);
         Ptr <Ipv4> ipNode1 = n1->GetObject<Ipv4> ();
@@ -88,7 +102,7 @@ MOGymEnv::ExecuteActions(Ptr<OpenGymDataContainer> action)
         Ptr <Node> n1 = NodeList::GetNode(m_link_interface_first[oplink].first);
         Ptr <Ipv4> ipNode1 = n1->GetObject<Ipv4> ();
         if(!ipnode1->isUp(m_link_interface_first[oplink].second)){
-            m_reward[1] = - m_obs_link_num; //invalid action, punishment
+            m_reward[0]=m_reward[1] = - m_obs_link_num; //invalid action, punishment
         }
         else{
 	        Simulator::Schedule (Simulator::Now().GetSeconds(), &Ipv4::SetDown, ipNode1, m_link_interface_first[oplink].second);
@@ -97,7 +111,7 @@ MOGymEnv::ExecuteActions(Ptr<OpenGymDataContainer> action)
         Ptr <Node> n2 = NodeList::GetNode(m_link_interface_second[oplink].first);
         Ptr <Ipv4> ipNode2 = n2->GetObject<Ipv4> ();
         if(!ipnode1->isUp(m_link_interface_second[oplink].second)){
-            m_reward[1] = - m_obs_link_num; //invalid action, punishment
+            m_reward[0]=m_reward[1] = - m_obs_link_num; //invalid action, punishment
         }
         else{
 	        Simulator::Schedule (Simulator::Now().GetSeconds(), &Ipv4::SetDown, ipNode2, m_link_interface_second[oplink].second);
@@ -107,18 +121,68 @@ MOGymEnv::ExecuteActions(Ptr<OpenGymDataContainer> action)
          // num = 32 null action
     }
 
-    NS_LOG_INFO ("MyExecuteActions: " << oplink;
+    NS_LOG_INFO ("MyExecuteActions: " << oplink);
     return true;
 }
 
 /*
 Define reward function
 */
-float
+double*
 MOGymEnv::GetReward()
 {
   NS_LOG_INFO("MyGetReward: " );
-  return m_envReward;
+  static double last_value1 = 0.0;
+  static double last_value2 = 0.0;
+  if(m_reward[0]==- m_obs_link_num && m_reward[1]==- m_obs_link_num){
+    return m_reward; //invalid action
+  }
+
+  // compute energy reward (m_reward[0])
+  double r1=0;
+  for(NodeList::Iterator i=NodeList::Begin();i!=NodeList::End();++i){
+     Ptr<Node> node = *i;
+     Ptr <Ipv4> ipNode = n1->GetObject<Ipv4> ();
+     bool node_down=true;
+     for(int j=1;j<=m_pod_num;j++){
+        if(ipNode->isUp(j)){
+            node_down=false;
+        }
+        else{
+            r1+=2;
+        }
+     }
+     if(node_down){
+        r1+=90;
+     }
+  }
+  m_reward[0]=r1-last_value1;
+  last_value1=r1;
+
+
+  // compute network performance reward(m_reward[1])
+  //final reward : fct
+  if(m_fct.size()>0){
+    for(int i=0;i<m_fct.size();i++){
+        if(m_fct.at(i).second<0){
+            m_reward[1]+=m_fct.at(i)*m_obs_link_num;
+        }
+        else{
+            if(m_fct.at(i).second>0){
+                if(m_fct.at(i).first<25000&&m_fct.at(i).second>0.003){
+                    m_reward[1]+=-m_obs_link_num;
+                }
+            }
+        }
+    }
+    m_fct.clear();
+    m_isGameOver = true;
+  }
+  //step reward : timestep
+  else{
+
+  }
+
 }
 
 /*
@@ -137,7 +201,6 @@ Define game over condition
 bool
 MOGymEnv::GetGameOver()
 {
-  m_isGameOver = false; // TODO
   return m_isGameOver;
 }
 
@@ -147,24 +210,10 @@ Define observation space
 Ptr<OpenGymSpace>
 TcpEventGymEnv::GetObservationSpace()
 {
-  // socket unique ID
-  // tcp env type: event-based = 0 / time-based = 1
-  // sim time in us
-  // node ID
-  // ssThresh
-  // cWnd
-  // segmentSize
-  // segmentsAcked
-  // bytesInFlight
-  // rtt in us
-  // min rtt in us
-  // called func
-  // congestion algorithm (CA) state
-  // CA event
-  // ECN state
+  // link utilization
   uint32_t parameterNum = m_obs_link_num;
-  float low = -1000000000.0;
-  float high = 1000000000.0;
+  double low = -1.0;
+  double high = 1.0;
   std::vector<uint32_t> shape = {parameterNum,};
   std::string dtype = TypeNameGet<double> ();
 
@@ -182,28 +231,39 @@ MOGymEnv::GetObservation()
   uint32_t parameterNum = m_obs_link_num;
   std::vector<uint32_t> shape = {parameterNum,};
 
-  Ptr<OpenGymBoxContainer<uint64_t> > box = CreateObject<OpenGymBoxContainer<uint64_t> >(shape);
+  Ptr<OpenGymBoxContainer<double> > box = CreateObject<OpenGymBoxContainer<uint64_t> >(shape);
 
-  // TODO
-  box->AddValue(m_socketUuid);
-  box->AddValue(0);
-  box->AddValue(Simulator::Now().GetMicroSeconds ());
-  box->AddValue(m_nodeId);
-  box->AddValue(m_tcb->m_ssThresh);
-  box->AddValue(m_tcb->m_cWnd);
-  box->AddValue(m_tcb->m_segmentSize);
-  box->AddValue(m_segmentsAcked);
-  box->AddValue(m_bytesInFlight);
-  box->AddValue(m_rtt.GetMicroSeconds ());
-  //box->AddValue(m_tcb->m_minRtt.GetMicroSeconds ());
-  //box->AddValue(m_calledFunc);
-  //box->AddValue(m_tcb->m_congState);
-  //box->AddValue(m_event);
-  //box->AddValue(m_tcb->m_ecnState);
+  for(int i=0;i<m_obs_link_num;i++){
+    int i0,j0,i1,j1;
+    i0=m_link_interface_first[i].first;
+    j0=m_link_interface_first[i].second;
+    i1=m_link_interface_second[i].first;
+    i1=m_link_interface_second[i].second;
+
+    if(m_link_utilization[i]&&(max(m_end_time[i0][j0],m_end_time[i1][j1])-min(m_start_time[i0][j0],m_start_time[i1][j1]))){
+        m_link_utilization[i]=m_total_bytes[i0][j0]>=m_total_bytes[i1][j1]?m_total_bytes[i0][j0]:m_total_bytes[i1][j1];
+        m_link_utilization[i] = m_link_utilization[i] / ((max(m_end_time[i0][j0],m_end_time[i1][j1])-min(m_start_time[i0][j0],m_start_time[i1][j1])) * 10 * 1000000000;
+    }
+    Ptr <Node> n = NodeList::GetNode(m_link_interface_first[i].first);
+    Ptr <Ipv4> ipNode = n->GetObject<Ipv4> ();
+    if(!ipnode->isUp(m_link_interface_first[i].second)){
+        box->AddValue(-1);
+    }
+    else{
+    box->AddValue(m_link_utilization[i]);
+    }
+  }
+
+  // clear m_total_bytes
+  std::for_each(m_total_bytes.begin(), m_total_bytes.end(),
+              [](auto& sub) {
+                  std::fill(sub.begin(), sub.end(), 0);
+              });
 
   // Print data
   NS_LOG_INFO ("MyGetObservation: " << box);
   return box;
+
 }
 
 /*
@@ -212,22 +272,6 @@ Define observation space
 Ptr<OpenGymSpace>
 MOGymEnv::GetObservationSpace()
 {
-  // socket unique ID
-  // tcp env type: event-based = 0 / time-based = 1
-  // sim time in us
-  // node ID
-  // ssThresh
-  // cWnd
-  // segmentSize
-  // bytesInFlightSum
-  // bytesInFlightAvg
-  // segmentsAckedSum
-  // segmentsAckedAvg
-  // avgRtt
-  // minRtt
-  // avgInterTx
-  // avgInterRx
-  // throughput
   uint32_t parameterNum = m_obs_link_num;
   float low = 0.0;
   float high = 1000000000.0;
@@ -239,123 +283,47 @@ MOGymEnv::GetObservationSpace()
   return box;
 }
 
-/*
-Collect observations
-*/
-Ptr<OpenGymDataContainer>
-MOGymEnv::GetObservation()
+void MOGymEnv::TxTrace(Ptr<MOGymEnv> entity,uint32_t node_id,uint32_t dev_id, Ptr<Packet const> packet )
 {
-  uint32_t parameterNum = m_obs_link_num;
-  std::vector<uint32_t> shape = {parameterNum,};
 
-  Ptr<OpenGymBoxContainer<uint64_t> > box = CreateObject<OpenGymBoxContainer<uint64_t> >(shape);
-
-  box->AddValue(m_socketUuid);
-  box->AddValue(1);
-  box->AddValue(Simulator::Now().GetMicroSeconds ());
-  box->AddValue(m_nodeId);
-  box->AddValue(m_tcb->m_ssThresh);
-  box->AddValue(m_tcb->m_cWnd);
-  box->AddValue(m_tcb->m_segmentSize);
-
-  //bytesInFlightSum
-  uint64_t bytesInFlightSum = std::accumulate(m_bytesInFlight.begin(), m_bytesInFlight.end(), 0);
-  box->AddValue(bytesInFlightSum);
-
-  //bytesInFlightAvg
-  uint64_t bytesInFlightAvg = 0;
-  if (m_bytesInFlight.size()) {
-    bytesInFlightAvg = bytesInFlightSum / m_bytesInFlight.size();
-  }
-  box->AddValue(bytesInFlightAvg);
-
-  //segmentsAckedSum
-  uint64_t segmentsAckedSum = std::accumulate(m_segmentsAcked.begin(), m_segmentsAcked.end(), 0);
-  box->AddValue(segmentsAckedSum);
-
-  //segmentsAckedAvg
-  uint64_t segmentsAckedAvg = 0;
-  if (m_segmentsAcked.size()) {
-    segmentsAckedAvg = segmentsAckedSum / m_segmentsAcked.size();
-  }
-  box->AddValue(segmentsAckedAvg);
-
-  //avgRtt
-  Time avgRtt = Seconds(0.0);
-  if(m_rttSampleNum) {
-    avgRtt = m_rttSum / m_rttSampleNum;
-  }
-  box->AddValue(avgRtt.GetMicroSeconds ());
-
-  //m_minRtt
-  box->AddValue(m_tcb->m_minRtt.GetMicroSeconds ());
-
-  //avgInterTx
-  Time avgInterTx = Seconds(0.0);
-  if (m_interTxTimeNum) {
-    avgInterTx = m_interTxTimeSum / m_interTxTimeNum;
-  }
-  box->AddValue(avgInterTx.GetMicroSeconds ());
-
-  //avgInterRx
-  Time avgInterRx = Seconds(0.0);
-  if (m_interRxTimeNum) {
-    avgInterRx = m_interRxTimeSum / m_interRxTimeNum;
-  }
-  box->AddValue(avgInterRx.GetMicroSeconds ());
-
-  //throughput  bytes/s
-  float throughput = (segmentsAckedSum * m_tcb->m_segmentSize) / m_timeStep.GetSeconds();
-  box->AddValue(throughput);
-
-/*---------------------------------------------------------------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------*/
-
-  // Update reward based on overall average of avgRtt over all steps so far
-  // only when agent increases cWnd
-  // TODO: this is not the right way of doing this.
-  // place this somewhere else. see TcpEventGymEnv, how they've done it.
-
-  if (m_new_cWnd > m_old_cWnd && m_totalAvgRttSum > 0 && avgRtt > 0)  {
-    // when agent increases cWnd
-    if ((m_totalAvgRttSum / m_totalAvgRttNum) >= avgRtt)  {
-      // give reward for decreasing avgRtt
-      m_envReward = m_reward;
-    } else {
-      // give penalty for increasing avgRtt
-      m_envReward = m_penalty;
+    if(m_start_time[node_id][dev_id]==0){
+        m_start_time[node_id][dev_id]=Simulator::Now().GetSeconds();
     }
-  } else  {
-    // agent has not increased cWnd
-    m_envReward = 0;
-  }
-
-  // Update m_totalAvgRtSum and m_totalAvgRttNum
-  m_totalAvgRttSum += avgRtt;
-  m_totalAvgRttNum++;
-
-  m_old_cWnd = m_new_cWnd;
-/*---------------------------------------------------------------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------*/
-/*---------------------------------------------------------------------------------------------------*/
-
-  // Print data
-  NS_LOG_INFO ("MyGetObservation: " << box);
-
-  m_bytesInFlight.clear();
-  m_segmentsAcked.clear();
-
-  m_rttSampleNum = 0;
-  m_rttSum = MicroSeconds (0.0);
-
-  m_interTxTimeNum = 0;
-  m_interTxTimeSum = MicroSeconds (0.0);
-
-  m_interRxTimeNum = 0;
-  m_interRxTimeSum = MicroSeconds (0.0);
-
-  return box;
+    m_end_time[node_id][dev_id]=Simulator::Now().GetSeconds();
+    m_total_bytes[node_id][dev_id]+=packet->GetSize();
 }
+
+
+
+/*
+void MOGymEnv::TxTrace(std::string context, Ptr<Packet const> packet )
+{
+    cout<<"TXTrace"<<endl;
+    std::cout<<context<<endl;
+    char* p = (char *)context.data();
+    char buf1[255];
+	char buf2[255];
+	char buf3[255];
+	char buf4[255];
+    char buf5[255];
+    sscanf(p, "/%[^/]/%[^/]/%[^/]/%[^/]/%s", buf1, buf2, buf3, buf4,buf5);
+    cout<<buf2<<" "<<buf4<<endl;
+    int dev = atoi(buf2);
+    int iface = atoi(buf4);
+    if(m_start_time[dev][iface]==0){
+        m_start_time[dev][iface]=Simulator::Now().GetSeconds();
+    }
+    m_end_time[dev][iface]=Simulator::Now().GetSeconds();
+    m_total_bytes[dev][iface]+=packet->GetSize();
+}
+
+void MOGymEnv::SetupTxTrace(int dev_id, int ith_id)
+{
+    std::ostringstream oss;
+    cout<<"setuptxtrace"<<endl;
+    oss << "/NodeList/"<<dev_id<<"/DeviceList/"<<ith_id<<"/$ns3::PointToPointNetDevice/TxQueue/Dequeue";
+    Config::Connect (oss.str (), MakeCallback (&MOGymEnv::TxTrace,this));
+}
+*/
 
 } // namespace ns3
