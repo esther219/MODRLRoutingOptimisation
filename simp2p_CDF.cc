@@ -264,13 +264,7 @@ void print_stats ( FlowMonitor::FlowStats st)
               cout << " " << i << "(" << st.delayHistogram.GetBinStart (i) << st.delayHistogram.GetBinEnd(i) << "):" << st.delayHistogram.GetBinCount (i) << endl;
 
         }
-
 }
-
-
-
-
-
 //and then in the callback, capture number of bytes entering the link.
 
 
@@ -669,7 +663,7 @@ for( i = 0 ; i < groups ; i++)
         cout<<"setuptxtrace"<<endl;
         oss << "/NodeList/"<<dev->GetNode ()->GetId ()<<"/DeviceList/"<<dev->GetIfIndex ()<<"/$ns3::PointToPointNetDevice/TxQueue/Dequeue";
         Config::ConnectWithoutContext(oss.str(),MakeBoundCallback(&MOGymEnv::TxTrace,myGymEnv,dev->GetNode ()->GetId (),dev->GetIfIndex ()));
- 
+
     }
   }
   
@@ -822,30 +816,24 @@ for( i = 0 ; i < groups ; i++)
 	
      Simulator::Run ();
 
-     
-     bool Plot=true;
-     if(Plot)
-         {
-               Gnuplot gnuplot("DELAYSbyFLOW.png");
-                 Gnuplot2dDataset dataset;
-                 dataset.SetStyle(Gnuplot2dDataset::HISTEPS);
-                 std::map< FlowId, FlowMonitor::FlowStats> stats = flowmon->GetFlowStats ();
-                 for (std::map<FlowId, FlowMonitor::FlowStats>::iterator flow=stats.begin(); flow!=stats.end();flow++)
 
-                 {
-                         Ipv4FlowClassifier::FiveTuple tuple = classifier->FindFlow(flow->first);
+     std::map< FlowId, FlowMonitor::FlowStats> stats = flowmon->GetFlowStats ();
+     int delay_num=0;
+     for (std::map<FlowId, FlowMonitor::FlowStats>::iterator flow=stats.begin(); flow!=stats.end();flow++)
+     {
+          Ipv4FlowClassifier::FiveTuple tuple = classifier->FindFlow(flow->first);
 
-                         if(tuple.protocol == 17 && tuple.sourcePort == 698)
-                                 continue;
-                         //dataset.Add((double)flow->first, (double)flow->second.delaySum.GetSeconds() / (double)flow->second.rxPackets);
-                         std::cout<<flow->first<<endl;
-                         print_stats ( flow->second);
-                         //dataset.Add((double)flow->first, (double)flow->second.timeLastRxPacket.GetSeconds() - (double)flow->second.timeFirstRxPacket.GetSeconds());
-                         dataset.Add((double)flow->first, (double)flow->second.timeLastRxPacket.GetSeconds() - (double) flow->second.timeFirstTxPacket.GetSeconds());
-                 }
-                 gnuplot.AddDataset(dataset);
-                 gnuplot.GenerateOutput(std::cout);
+          if(tuple.protocol == 17 && tuple.sourcePort == 698)
+            continue;
+          //dataset.Add((double)flow->first, (double)flow->second.delaySum.GetSeconds() / (double)flow->second.rxPackets);
+          std::cout<<flow->first<<endl;
+          print_stats ( flow->second);
+          if(flow->second.rxBytes <25000 && (double)flow->second.timeLastRxPacket.GetSeconds() - (double) flow->second.timeFirstTxPacket.GetSeconds())){
+            delay_num=++
+          }
+          //dataset.Add((double)flow->first, (double)flow->second.timeLastRxPacket.GetSeconds() - (double) flow->second.timeFirstTxPacket.GetSeconds());
      }
+     myGymEnv->m_fct=delay_num;
 
      myGymEnv->NotifySimulationEnd();
      Simulator::Destroy ();
