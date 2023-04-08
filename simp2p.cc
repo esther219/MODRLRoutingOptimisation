@@ -484,14 +484,14 @@ main(int argc, char *argv[])
                 }
                 save_x = save_x + 30;
          }
-        printf("Aggr placed\n");
+        //printf("Aggr placed\n");
 	internet.Install(l1[i]);
         save_x = save;
         pos_y = 150;
         for ( j=0; j < k/2 ; j++)
 	{
 	   temp = (k/2) * i + j;
-	   cout << "Subnet Number :" << temp << endl;
+	   //cout << "Subnet Number :" << temp << endl;
 	   c[subnet_index].Create(k/2);
            // Place the nodes at suitable position for Animation
            Ptr<Node> n1 = c[subnet_index].Get(0);
@@ -501,7 +501,7 @@ main(int argc, char *argv[])
               Vector vec1(save_x - 10,pos_y,0);
               loc1->SetPosition(vec1);
               n1->AggregateObject(loc1);
-              cout << "n1: " <<  pos_x << " " << pos_y << endl;
+              //cout << "n1: " <<  pos_x << " " << pos_y << endl;
            }
 						save_x = save_x + 20;
             // Place the nodes at suitable position for Animation
@@ -512,9 +512,9 @@ main(int argc, char *argv[])
               Vector vec2(save_x + 10,pos_y ,0);
               loc2->SetPosition(vec2);
               n2->AggregateObject(loc2);
-              cout << "n2: " <<  pos_x << " " << pos_y << endl;
+              //cout << "n2: " <<  pos_x << " " << pos_y << endl;
            }
-           printf("Pod placed\n");
+           //printf("Pod placed\n");
 	   internet.Install(c[subnet_index]);
            
        p2p.SetDeviceAttribute ("DataRate",DataRateValue (DataRate(SERVER_LINK_CAPACITY)));
@@ -536,10 +536,10 @@ main(int argc, char *argv[])
            strcat(str3,str4);
            strcat(str2,str3);
            strcat(str1,str2);
-           cout << "Subnet Address : " << str1 << endl;
+           //cout << "Subnet Address : " << str1 << endl;
            address.SetBase (str1, "255.255.255.252");
            ip[temp*2+q] = address.Assign(d[temp*2+q]);
-	   cout << "Temp : " << temp << "Subnet_index : " << subnet_index << endl;
+	   //cout << "Temp : " << temp << "Subnet_index : " << subnet_index << endl;
 	   
            }
            subnet_index++;
@@ -554,13 +554,13 @@ main(int argc, char *argv[])
 
 	for(j=k/2; j < k; j++)
 	{
-	      cout << " Combined  Pod " << i << " th " << j << "Router\n"; 
+	      //cout << " Combined  Pod " << i << " th " << j << "Router\n"; 
 	      for ( p = 0; p < k/2; p++)
 	      {  
                  
                  p2p_d[l1_index] = p2p.Install(NodeContainer(l1[i].Get(j),l1[i].Get(p)));
 		 //p2p_d[l1_index].Add (csma.Install(NodeContainer ( l1[i].Get (p)))); 
-	         cout << " Router added are  Pod " << i << " th " << p << "Router\n"; 
+	         //cout << " Router added are  Pod " << i << " th " << p << "Router\n"; 
 	         bzero(str1,30);
                  bzero(str3,30);
                  bzero(str2,30);
@@ -574,12 +574,12 @@ main(int argc, char *argv[])
 		 bzero(str3,30);
 		 snprintf(str3,10,"%d",third_ip);
                  strcat(str1,str3);
-                 cout << "Level: " << i  << " Router: " << j <<" -- IP Address : " << str1 << endl;
+                 //cout << "Level: " << i  << " Router: " << j <<" -- IP Address : " << str1 << endl;
                  address.SetBase (str1, "255.255.255.252");
 	         ip_for_p2p[l1_index] = address.Assign ( p2p_d[l1_index]);
                  pairx = ip_for_p2p[l1_index].Get (0);
-	         cout << "++++++++++++++l1_index +++++++++++++++++ :" << l1_index << endl;
-                 cout << "Router addresses 1 :" << pairx.first -> GetAddress(1,0) << endl; 
+	         //cout << "++++++++++++++l1_index +++++++++++++++++ :" << l1_index << endl;
+                 //cout << "Router addresses 1 :" << pairx.first -> GetAddress(1,0) << endl; 
                  //cout << "Router addresses 2 :" << pairx.first -> GetAddress(2,0) << endl; 
                  //cout << "Router addresses 2 :" << pairx.first -> GetAddress(3,0) << endl; 
 	         l1_index++;
@@ -611,9 +611,9 @@ for( i = 0 ; i < groups ; i++)
     	for ( p = 0; p < k ; p++)
     	{
     	    core_d[l2_index] = p2p.Install(NodeContainer(l2.Get((k/2)*i+j),l1[p].Get((k/2) + j)));
-	        cout << "Core****" << k/2*i+j << "****Combined with \n";
+	        //cout << "Core****" << k/2*i+j << "****Combined with \n";
         	 //core_d[l2_index].Add (p2p.Install(NodeContainer ( l1[p].Get ((k/2) + j))));
-		     cout << "Pod " << p << " Switch " << (k/2) + j << endl;
+		     //cout << "Pod " << p << " Switch " << (k/2) + j << endl;
     	         bzero(str1,30);
    	         bzero(str3,30);
    	         bzero(str2,30);
@@ -628,11 +628,11 @@ for( i = 0 ; i < groups ; i++)
                  bzero(str2,30);
 		 snprintf(str2,10,"%d",ip2);
 		 strcat(str1,str2);
-    	         cout << "Group:  " << i  << " Router: " << j <<" -- IP Address : " << str1 << endl;
+    	         //cout << "Group:  " << i  << " Router: " << j <<" -- IP Address : " << str1 << endl;
     	         address.SetBase (str1, "255.255.255.252");
     	         ip_for_core[l2_index] = address.Assign ( core_d[l2_index]);
-	         uint32_t nNodes = ip_for_core[l2_index].GetN ();
-	         cout << "Number of Nodes at core :" << l2_index << "   is-_-_-_-_ " << nNodes << endl; 
+	         //uint32_t nNodes = ip_for_core[l2_index].GetN ();
+	         //cout << "Number of Nodes at core :" << l2_index << "   is-_-_-_-_ " << nNodes << endl; 
     	         l2_index++;
 		 ip2 = ip2 + 4;
 		 if(ip2 == 252) {
@@ -661,7 +661,7 @@ for( i = 0 ; i < groups ; i++)
       Ptr<NetDevice> dev = *i;
      
       std::ostringstream oss;
-        cout<<"setuptxtrace"<<endl;
+        //cout<<"setuptxtrace"<<endl;
         oss << "/NodeList/"<<dev->GetNode ()->GetId ()<<"/DeviceList/"<<dev->GetIfIndex ()<<"/$ns3::PointToPointNetDevice/TxQueue/Dequeue";
         Config::ConnectWithoutContext(oss.str(),MakeBoundCallback(&MOGymEnv::TxTrace,myGymEnv,dev->GetNode ()->GetId (),dev->GetIfIndex ()));
      
@@ -682,7 +682,7 @@ for( i = 0 ; i < groups ; i++)
       Ptr<NetDevice> dev = *i;
       //MOGymEnv::SetupTxTrace( dev->GetNode ()->GetId (), dev->GetIfIndex ());
        std::ostringstream oss;
-        cout<<"setuptxtrace"<<endl;
+        //cout<<"setuptxtrace"<<endl;
         oss << "/NodeList/"<<dev->GetNode ()->GetId ()<<"/DeviceList/"<<dev->GetIfIndex ()<<"/$ns3::PointToPointNetDevice/TxQueue/Dequeue";
         Config::ConnectWithoutContext(oss.str(),MakeBoundCallback(&MOGymEnv::TxTrace,myGymEnv,dev->GetNode ()->GetId (),dev->GetIfIndex ()));
      }
@@ -761,7 +761,7 @@ for( i = 0 ; i < groups ; i++)
            if( i != j) {
               temp1 = j * k/2;
               for( int l = 0; l < k/2 ; l++){
-                   printf( " Pod %d server %d sedning data to Pod %d server %d \n", temp+l,l,temp1+l,l);
+                   //printf( " Pod %d server %d sending data to Pod %d server %d \n", temp+l,l,temp1+l,l);
                    source.SetAttribute ("Remote", AddressValue (InetSocketAddress (ip[(temp1+l)*2+l].GetAddress (1), port)));
                    
 

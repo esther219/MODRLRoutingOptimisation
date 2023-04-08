@@ -126,22 +126,22 @@ MOGymEnv::ExecuteActions(Ptr<OpenGymDataContainer> action)
     }
     else if(oplink > m_op_link_num){
         //num th link down
-        Ptr <Node> n1 = NodeList::GetNode(m_op_link_interface_first[oplink].first);
+        Ptr <Node> n1 = NodeList::GetNode(m_op_link_interface_first[oplink-m_op_link_num-1].first);
         Ptr <Ipv4> ipnode1 = n1->GetObject<Ipv4> ();
-        if(!ipnode1->IsUp(m_op_link_interface_first[oplink].second)){
+        if(!ipnode1->IsUp(m_op_link_interface_first[oplink-m_op_link_num-1].second)){
             m_reward1=m_reward0 = - m_obs_link_num; //invalid action, punishment
         }
         else{
-	        Simulator::Schedule (Simulator::Now(), &Ipv4::SetDown, ipnode1, m_op_link_interface_first[oplink].second);
+	        Simulator::Schedule (Simulator::Now(), &Ipv4::SetDown, ipnode1, m_op_link_interface_first[oplink-m_op_link_num-1].second);
         }
 
-        Ptr <Node> n2 = NodeList::GetNode(m_op_link_interface_second[oplink].first);
+        Ptr <Node> n2 = NodeList::GetNode(m_op_link_interface_second[oplink-m_op_link_num-1].first);
         Ptr <Ipv4> ipnode2 = n2->GetObject<Ipv4> ();
-        if(!ipnode1->IsUp(m_op_link_interface_second[oplink].second)){
+        if(!ipnode1->IsUp(m_op_link_interface_second[oplink-m_op_link_num-1].second)){
             m_reward1=m_reward0 = - m_obs_link_num; //invalid action, punishment
         }
         else{
-	        Simulator::Schedule (Simulator::Now(), &Ipv4::SetDown, ipnode2, m_op_link_interface_second[oplink].second);
+	        Simulator::Schedule (Simulator::Now(), &Ipv4::SetDown, ipnode2, m_op_link_interface_second[oplink-m_op_link_num-1].second);
         }
     }
     else{

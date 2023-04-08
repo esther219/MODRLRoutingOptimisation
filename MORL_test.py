@@ -12,6 +12,7 @@ K = 4
 NET_STATE_SIZE = 32
 NET_ACTION_SIZE = 21
 
+
 parser = argparse.ArgumentParser(description='Start simulation script on/off')
 parser.add_argument('--start',
                     type=int,
@@ -19,16 +20,17 @@ parser.add_argument('--start',
                     help='Start ns-3 simulation script 0/1, Default: 1')
 parser.add_argument('--iterations',
                     type=int,
-                    default=1,
+                    default=5000,
                     help='Number of iterations, Default: 5000')
 args = parser.parse_args()
 startSim = bool(args.start)
 iterationNum = int(args.iterations)
 
 
+
 port = 5555
-stepTime = 0.5 # seconds
-seed = 12
+stepTime = 0.005 # seconds
+seed = 0
 debug = False
 
 env = ns3env.Ns3Env(port=port, stepTime=stepTime, startSim=startSim, simSeed=seed, debug=debug)
@@ -38,7 +40,7 @@ ob_space = env.observation_space # TODO
 state_shape = ob_space.shape # TODO
 ac_space = env.action_space # TODO
 action_num = ac_space.shape # TODO
-num_objectives = env.num_of_objectives # TODO
+num_objectives = 2 # TODO
 print("Observation space: ", ob_space,  ob_space.dtype)
 print("Action space: ", ac_space, ac_space.dtype)
 print("number of objective:", num_objectives)
@@ -96,10 +98,11 @@ try:
 
         while True:
             nom_action, sel_policy = agent.get_action_nomination(obs)
+            
             num_steps += 1
-            nextState, reward, done, info = env.step_all(nom_action)
+            nextState, reward, done, info = env.step(nom_action)
             selected_policies.append(sel_policy)
-            nextState = nextState
+            print("---obs, reward, done, info: ", obs, reward, done, info)
 
             agent.store_transition(obs, nom_action, reward, nextState, done, sel_policy)
             agent.learn()
