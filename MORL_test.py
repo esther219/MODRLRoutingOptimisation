@@ -98,14 +98,14 @@ try:
         while True:
             nom_action, sel_policy = agent.get_action_nomination(obs)
             num_steps += 1
-            nextState, reward, done, _ = env.step_all(nom_action)
+            nextState, reward, done, info = env.step_all(nom_action)
             selected_policies.append(sel_policy)
             nextState = nextState
 
             agent.store_transition(obs, nom_action, reward, nextState, done, sel_policy)
             agent.learn()
-            rewardsSum1 = np.add(rewardsSum1, reward[0])
-            rewardsSum2 = np.add(rewardsSum2, reward[1])
+            rewardsSum1 = np.add(rewardsSum1, atoi(info))
+            rewardsSum2 = np.add(rewardsSum2, reward)
             obs = nextState
             if done:
                 if currIt + 1 < iterationNum:
