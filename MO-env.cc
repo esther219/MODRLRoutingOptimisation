@@ -263,7 +263,7 @@ MOGymEnv::GetObservation()
     i0=m_obs_link_interface_first[i].first;
     j0=m_obs_link_interface_first[i].second;
     i1=m_obs_link_interface_second[i].first;
-    i1=m_obs_link_interface_second[i].second;
+    j1=m_obs_link_interface_second[i].second;
 
     if(m_link_utilization[i]&&(std::max(m_end_time[i0][j0],m_end_time[i1][j1])-std::min(m_start_time[i0][j0],m_start_time[i1][j1]))){
         m_link_utilization[i]=m_total_bytes[i0][j0]>=m_total_bytes[i1][j1]?m_total_bytes[i0][j0]:m_total_bytes[i1][j1];
@@ -279,6 +279,10 @@ MOGymEnv::GetObservation()
     }
   }
   
+  double now = Simulator::Now().GetSeconds();
+  for (auto& sub : m_start_time) {
+    std::fill(sub.begin(), sub.end(), now);
+    }
   // clear m_total_bytes
   /*
   std::for_each(m_total_bytes.begin(), m_total_bytes.end(),
@@ -286,7 +290,7 @@ MOGymEnv::GetObservation()
                   std::fill(sub.begin(), sub.end(), 0);
               });
   */
-
+   
    for (auto& sub : m_total_bytes) {
     std::fill(sub.begin(), sub.end(), 0);
     }
@@ -296,15 +300,26 @@ MOGymEnv::GetObservation()
 
 }
 
+void MOGymEnv::setStartTime(int node_id, int dev_id,double time){
+    if(m_start_time[node_id][dev_id]==0){
+        m_start_time[node_id][dev_id]=time;
+    }
+}
+
+void MOGymEnv::setEndTime(int node_id, int dev_id,double time){
+    m_end_time[node_id][dev_id]=time;
+}
+
+void MOGymEnv::setTotalBytes(int node_id, int dev_id,uint32_t pksize){
+	m_total_bytes[node_id][dev_id]+=pksize;
+}
 
 void MOGymEnv::TxTrace(Ptr<MOGymEnv> entity,int node_id,int dev_id, Ptr<Packet const> packet )
 {
 
-    if(m_start_time[node_id][dev_id]==0){
-        m_start_time[node_id][dev_id]=Simulator::Now().GetSeconds();
-    }
-    m_end_time[node_id][dev_id]=Simulator::Now().GetSeconds();
-    m_total_bytes[node_id][dev_id]+=packet->GetSize();
+    entity->setStartTime(node_id,dev_id,Simulator::Now().GetSeconds());
+    entity->setEndTime(node_id,dev_id,Simulator::Now().GetSeconds());
+    entity->setTotalBytes(node_id,dev_id,packet->GetSize());
 }
 
 

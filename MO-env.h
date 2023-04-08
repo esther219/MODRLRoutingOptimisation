@@ -47,9 +47,7 @@ public:
   static TypeId GetTypeId (void);
   virtual void DoDispose ();
 
-  void SetupTxTrace(Ptr<MOGymEnv> entity, int dev_id, int ith_id,Ptr<Packet const> packet);
-  void TxTrace(std::string context, Ptr<Packet const> packet);
-
+  static void TxTrace(Ptr<MOGymEnv> entity, int dev_id, int ith_id,Ptr<Packet const> packet);
 
   //std::string GetTcpCongStateName(const TcpSocketState::TcpCongState_t state);
   //std::string GetTcpCAEventName(const TcpSocketState::TcpCAEvent_t event);
@@ -64,17 +62,9 @@ public:
   Ptr<OpenGymDataContainer> GetObservation();
   int m_fct = 0;
 
-  // trace packets, e.g. for calculating inter tx/rx time
-  //virtual void TxPktTrace(Ptr<const Packet>, const TcpHeader&, Ptr<const TcpSocketBase>) = 0;
-  //virtual void RxPktTrace(Ptr<const Packet>, const TcpHeader&, Ptr<const TcpSocketBase>) = 0;
-
-  // TCP congestion control interface
- // virtual uint32_t GetSsThresh (Ptr<const TcpSocketState> tcb, uint32_t bytesInFlight) = 0;
-  //virtual void IncreaseWindow (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked) = 0;
-  // optional functions used to collect obs
-  //virtual void PktsAcked (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked, const Time& rtt) = 0;
-  //virtual void CongestionStateSet (Ptr<TcpSocketState> tcb, const TcpSocketState::TcpCongState_t newState) = 0;
-  //virtual void CwndEvent (Ptr<TcpSocketState> tcb, const TcpSocketState::TcpCAEvent_t event) = 0;
+  void setStartTime(int node_id, int dev_id,double time);
+  void setEndTime(int node_id, int dev_id,double time);
+  void setTotalBytes(int node_id, int dev_id,uint32_t pksize);
 
 
 protected:
