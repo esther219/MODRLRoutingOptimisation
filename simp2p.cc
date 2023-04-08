@@ -369,7 +369,7 @@ main(int argc, char *argv[])
 
   // OpenGym Env
   Ptr<OpenGymInterface> openGymInterface = CreateObject<OpenGymInterface> (openGymPort);
-  Ptr<MOGymEnv> myGymEnv = CreateObject<MOGymEnv> (Seconds(envStepTime+0.2));
+  Ptr<MOGymEnv> myGymEnv = CreateObject<MOGymEnv> (Seconds(envStepTime));
   myGymEnv->SetOpenGymInterface(openGymInterface);
 
   NS_LOG_INFO ("Create Nodes");

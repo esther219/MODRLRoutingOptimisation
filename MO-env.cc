@@ -48,7 +48,7 @@ MOGymEnv::MOGymEnv (Time stepTime)
   m_interval = stepTime;
   m_isGameOver = false;
 
-  Simulator::Schedule(stepTime,&MOGymEnv::ScheduleNextStateRead,this);
+  Simulator::Schedule(Seconds(stepTime.GetSeconds()+0.2),&MOGymEnv::ScheduleNextStateRead,this);
   SetOpenGymInterface(OpenGymInterface::Get());
 }
 

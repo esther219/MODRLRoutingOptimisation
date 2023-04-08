@@ -3,15 +3,14 @@ import pandas as pd
 import numpy as np
 import math
 import collections
-
 from ns3gym import ns3env
 from dqw_agent import DWL
 
 import torch
 
 K = 4
-NET_STATE_SIZE = (K/2)*(K/2)*K+(K/2)*K*(K/2)
-NET_ACTION_SIZE = 2*NET_STATE_SIZE+1
+NET_STATE_SIZE = 32
+NET_ACTION_SIZE = 21
 
 parser = argparse.ArgumentParser(description='Start simulation script on/off')
 parser.add_argument('--start',
