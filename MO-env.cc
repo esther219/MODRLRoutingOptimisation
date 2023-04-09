@@ -107,19 +107,22 @@ MOGymEnv::ExecuteActions(Ptr<OpenGymDataContainer> action)
         //num th link up
         Ptr <Node> n1 = NodeList::GetNode(m_op_link_interface_first[oplink].first);
         Ptr <Ipv4> ipnode1 = n1->GetObject<Ipv4> ();
+        Ptr <Node> n2 = NodeList::GetNode(m_op_link_interface_second[oplink].first);
+        Ptr <Ipv4> ipnode2 = n2->GetObject<Ipv4> ();
         if(ipnode1->IsUp(m_op_link_interface_first[oplink].second)){
             m_reward1 = m_reward0=- m_obs_link_num; //invalid action, punishment
         }
         else{
 	    Simulator::Schedule (Simulator::Now(), &Ipv4::SetUp, ipnode1, m_op_link_interface_first[oplink].second);
+            Simulator::Schedule (Simulator::Now(), &Ipv4::SetUp, ipnode2, m_op_link_interface_second[oplink].second);
         }
 
-        Ptr <Node> n2 = NodeList::GetNode(m_op_link_interface_second[oplink].first);
-        Ptr <Ipv4> ipnode2 = n2->GetObject<Ipv4> ();
+        
         if(ipnode2->IsUp(m_op_link_interface_second[oplink].second)){
             m_reward1 = m_reward0 = - m_obs_link_num;
         }
         else{
+            Simulator::Schedule (Simulator::Now(), &Ipv4::SetUp, ipnode1, m_op_link_interface_first[oplink].second);
             Simulator::Schedule (Simulator::Now(), &Ipv4::SetUp, ipnode2, m_op_link_interface_second[oplink].second);
         }
 
@@ -128,20 +131,23 @@ MOGymEnv::ExecuteActions(Ptr<OpenGymDataContainer> action)
         //num th link down
         Ptr <Node> n1 = NodeList::GetNode(m_op_link_interface_first[oplink-m_op_link_num-1].first);
         Ptr <Ipv4> ipnode1 = n1->GetObject<Ipv4> ();
+        Ptr <Node> n2 = NodeList::GetNode(m_op_link_interface_second[oplink-m_op_link_num-1].first);
+        Ptr <Ipv4> ipnode2 = n2->GetObject<Ipv4> ();
         if(!ipnode1->IsUp(m_op_link_interface_first[oplink-m_op_link_num-1].second)){
             m_reward1=m_reward0 = - m_obs_link_num; //invalid action, punishment
         }
         else{
 	        Simulator::Schedule (Simulator::Now(), &Ipv4::SetDown, ipnode1, m_op_link_interface_first[oplink-m_op_link_num-1].second);
+                Simulator::Schedule (Simulator::Now(), &Ipv4::SetDown, ipnode2, m_op_link_interface_second[oplink-m_op_link_num-1].second);
         }
 
-        Ptr <Node> n2 = NodeList::GetNode(m_op_link_interface_second[oplink-m_op_link_num-1].first);
-        Ptr <Ipv4> ipnode2 = n2->GetObject<Ipv4> ();
+        
         if(!ipnode1->IsUp(m_op_link_interface_second[oplink-m_op_link_num-1].second)){
             m_reward1=m_reward0 = - m_obs_link_num; //invalid action, punishment
         }
         else{
-	        Simulator::Schedule (Simulator::Now(), &Ipv4::SetDown, ipnode2, m_op_link_interface_second[oplink-m_op_link_num-1].second);
+            Simulator::Schedule (Simulator::Now(), &Ipv4::SetDown, ipnode1, m_op_link_interface_first[oplink-m_op_link_num-1].second);
+                Simulator::Schedule (Simulator::Now(), &Ipv4::SetDown, ipnode2, m_op_link_interface_second[oplink-m_op_link_num-1].second);
         }
     }
     else{
@@ -265,7 +271,8 @@ MOGymEnv::GetObservation()
     i1=m_obs_link_interface_second[i].first;
     j1=m_obs_link_interface_second[i].second;
 
-    if(m_link_utilization[i]&&(std::max(m_end_time[i0][j0],m_end_time[i1][j1])-std::min(m_start_time[i0][j0],m_start_time[i1][j1]))){
+    if(std::max(m_end_time[i0][j0],m_end_time[i1][j1])-std::min(m_start_time[i0][j0],m_start_time[i1][j1])>=0){
+    //if(m_link_utilization[i]&&(std::max(m_end_time[i0][j0],m_end_time[i1][j1])-std::min(m_start_time[i0][j0],m_start_time[i1][j1]))){
         m_link_utilization[i]=m_total_bytes[i0][j0]>=m_total_bytes[i1][j1]?m_total_bytes[i0][j0]:m_total_bytes[i1][j1];
         m_link_utilization[i] = m_link_utilization[i] / ((std::max(m_end_time[i0][j0],m_end_time[i1][j1])-std::min(m_start_time[i0][j0],m_start_time[i1][j1])) * 10 * 1000000000);
     }
